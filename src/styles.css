@@ -1,0 +1,11 @@
+@import "../styles.css";
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
