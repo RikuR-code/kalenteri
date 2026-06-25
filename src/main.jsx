@@ -72,12 +72,17 @@ function App() {
   const selectedEvents = events
     .filter((item) => item.date === selectedDateKey)
     .sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
-  const eventCounts = events.reduce((counts, item) => {
-    counts[item.date] = (counts[item.date] ?? 0) + 1;
-    return counts;
+  const eventDotsByDate = events.reduce((dots, item) => {
+    dots[item.date] ??= new Set();
+    if (item.sourceType === "elakeliitto") {
+      dots[item.date].add("dot dot-elakeliitto");
+    } else if (item.isSeniorEvent) {
+      dots[item.date].add("dot dot-senior");
+    } else {
+      dots[item.date].add("dot");
+    }
+    return dots;
   }, {});
-  const seniorEventDates = new Set(events.filter((item) => item.isSeniorEvent).map((item) => item.date));
-  const elakeliittoEventDates = new Set(events.filter((item) => item.sourceType === "elakeliitto").map((item) => item.date));
 
   function selectDate(date) {
     setSelectedDate(date);
@@ -252,7 +257,7 @@ function App() {
           <div className="calendar-grid">
             {getCalendarDates(visibleMonth).map((date) => {
               const dateKey = toISODate(date);
-              const count = Math.min(eventCounts[dateKey] ?? 0, 4);
+              const dots = [...(eventDotsByDate[dateKey] ?? [])];
               return (
                 <button
                   type="button"
@@ -268,8 +273,8 @@ function App() {
                 >
                   <span className="day-number">{date.getDate()}</span>
                   <span className="event-dots">
-                    {Array.from({ length: count }, (_, index) => (
-                      <span className={getDateDotClass(dateKey, { seniorEventDates, elakeliittoEventDates })} key={index} />
+                    {dots.map((className) => (
+                      <span className={className} key={className} />
                     ))}
                   </span>
                 </button>
@@ -353,16 +358,6 @@ function HomeScreen({ onOpenCalendar }) {
       </section>
     </main>
   );
-}
-
-function getDateDotClass(dateKey, calendars) {
-  if (calendars.elakeliittoEventDates.has(dateKey)) {
-    return "dot dot-elakeliitto";
-  }
-  if (calendars.seniorEventDates.has(dateKey)) {
-    return "dot dot-senior";
-  }
-  return "dot";
 }
 
 function getEventItemClass(event) {
